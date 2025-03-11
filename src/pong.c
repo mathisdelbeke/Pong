@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
+#include <math.h>
 #include "pong.h"
 
 static int FIELD_WIDTH = 800;
@@ -12,16 +13,54 @@ static int HEIGHT_USER = 60;
 static int HEIGHT_ENEMY = 60;
 
 static int BALL_RAD = 10;
-static int JUMP_SPEED = 10;
+static int MOVE_SPEED = 20;
+static float MAX_BOUNCE_ANGLE = (75 * (G_PI / 180));
 static int GOAL_WIDTH = 10;
 
 static bool running = true;
+
 static Player user;
 static Player enemy;
 static Ball ball;
 
 static GtkWidget *window = NULL;
 static GtkWidget *drawing_area = NULL;
+
+static void update_ball_pos() {
+    ball.pos.x += ball.dx;
+    ball.pos.y += ball.dy;
+}
+
+static void check_wall_collision() {
+    if (ball.pos.y - ball.radius <= 0 || ball.pos.y + ball.radius >= FIELD_HEIGHT) {
+        ball.dy = -ball.dy;
+    }
+}
+
+static void check_player_collision(Player *player) {
+    if (ball.pos.x - ball.radius <= player->pos.x + player->size.width && ball.pos.x + ball.radius >= player->pos.x) {
+        if (ball.pos.y >= player->pos.y && ball.pos.y <= player->pos.y + player->size.height) {
+            float hit_position = (ball.pos.y - player->pos.y) / (float)player->size.height;
+            float bounce_angle = (hit_position - 0.5) * MAX_BOUNCE_ANGLE;
+
+            ball.dx = ball.speed * cos(bounce_angle) * (ball.dx < 0 ? 1 : -1);  
+            ball.dy = ball.speed * sin(bounce_angle);
+        }
+    }
+}
+
+static gboolean update_game(gpointer user_data) {
+    update_ball_pos();
+    check_wall_collision();
+    check_player_collision(&user);
+    check_player_collision(&enemy);
+
+    if (ball.pos.x < 0) ball.pos.x = FIELD_WIDTH / 2;
+    if (ball.pos.x > FIELD_WIDTH) ball.pos.x = FIELD_WIDTH / 2;
+    
+    gtk_widget_queue_draw(drawing_area);
+    return TRUE;
+}
 
 static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     cairo_set_source_rgb(cr, 0.0, 0.0, 0.0); 
@@ -33,10 +72,8 @@ static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data
     cairo_fill(cr);
     
     Player *player = (Player *)user_data;
-
     cairo_rectangle(cr, player->pos.x, player->pos.y, player->size.width, player->size.height);
     cairo_fill(cr);
-
     cairo_rectangle(cr, enemy.pos.x, enemy.pos.y, enemy.size.width, enemy.size.height);
     cairo_fill(cr);
 
@@ -46,14 +83,13 @@ static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data
 static gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
     if (event->keyval == GDK_KEY_Up) {
         if (user.pos.y > 0) {
-            user.pos.y -= JUMP_SPEED;  
+            user.pos.y -= MOVE_SPEED;  
         }
     } else if (event->keyval == GDK_KEY_Down) {
-        if (user.pos.y <= (FIELD_HEIGHT - user.size.height - JUMP_SPEED)) {
-            user.pos.y += JUMP_SPEED;
+        if (user.pos.y <= (FIELD_HEIGHT - user.size.height - MOVE_SPEED)) {
+            user.pos.y += MOVE_SPEED;
         }
     }
-    printf("%d\n", user.pos.y);
     gtk_widget_queue_draw(widget);
     return FALSE;
 }
@@ -81,6 +117,7 @@ static void first_render() {
     init_drawing_area();
     init_key_presses();
     gtk_widget_show_all(GTK_WIDGET(window));
+    g_timeout_add(16, update_game, NULL);
     gtk_main();
 }
 
@@ -106,6 +143,9 @@ static void make_ball() {
     ball.pos.x = (FIELD_WIDTH / 2) - (BALL_RAD / 2);
     ball.pos.y = (FIELD_HEIGHT / 2) - (BALL_RAD / 2);
     ball.radius = BALL_RAD;
+    ball.dx = -10;
+    ball.dy = 0;
+    ball.speed = 10;
 }
 
 int main(int argc, char *argv[]) {
@@ -113,10 +153,5 @@ int main(int argc, char *argv[]) {
     make_players();
     make_ball();
     first_render();
-
-    //while (running) {
-
-    //}
-
     return 0;
 }

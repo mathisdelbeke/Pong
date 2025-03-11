@@ -21,6 +21,8 @@ typedef struct {
 
 typedef struct {
     Position pos;
+    int dx, dy;
+    int speed;
     int radius;
 } Ball;
 

@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS := -Wall -I./include $(shell pkg-config --cflags gtk+-3.0)
-LDFLAGS := $(shell pkg-config --libs gtk+-3.0)
+LDFLAGS := -lm $(shell pkg-config --libs gtk+-3.0)
 
 TARGET = Pong
 
