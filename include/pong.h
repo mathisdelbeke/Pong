@@ -3,5 +3,20 @@
 
 #include <gtk/gtk.h>
 
+typedef struct {
+    int x; 
+    int y;
+} Position;
+
+typedef struct {
+    int width;
+    int height;
+} Size;
+
+typedef struct {
+    int number;
+    Position pos;
+    Size size;    
+} Player;
 
 #endif
