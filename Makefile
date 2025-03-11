@@ -4,7 +4,7 @@ LDFLAGS := $(shell pkg-config --libs gtk+-3.0)
 
 TARGET = Pong
 
-SRCS = src/main.c
+SRCS = src/pong.c
 OBJS = $(SRCS:src/%.c=build/%.o)
 
 all: $(TARGET)
