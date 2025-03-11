@@ -19,4 +19,9 @@ typedef struct {
     Size size;    
 } Player;
 
+typedef struct {
+    Position pos;
+    int radius;
+} Ball;
+
 #endif
