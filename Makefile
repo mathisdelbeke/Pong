@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -I./include
-LDFLAGS = $(shell pkg-config --cflags --libs gtk+-3.0)
+CFLAGS := -Wall -I./include $(shell pkg-config --cflags gtk+-3.0)
+LDFLAGS := $(shell pkg-config --libs gtk+-3.0)
 
 TARGET = Pong
 
@@ -14,4 +14,8 @@ $(TARGET): $(OBJS)
 
 build/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -rf build Pong
+	mkdir build
 
