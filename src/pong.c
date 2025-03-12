@@ -15,7 +15,6 @@ static int height_user = 60;
 static int height_enemy = 60;
 
 static int ball_radius = 10;
-static int user_speed = 20;
 static int enemy_speed = 20;
 
 static bool enemy_catch_up = true;
@@ -32,6 +31,7 @@ int main(int argc, char *argv[]) {
     make_players();
     make_ball();
     first_render();
+    gtk_main();
     return 0;
 }
 
@@ -65,10 +65,9 @@ static void make_ball() {
 static void first_render() {
     init_window();
     init_drawing_area();
-    init_key_presses();
+    init_mouse_input();
     gtk_widget_show_all(GTK_WIDGET(window));
-    g_timeout_add(16, update_game, NULL);
-    gtk_main();
+    g_timeout_add_full(G_PRIORITY_HIGH, 16, update_game, NULL, NULL);
 }
 
 static void init_window() {
@@ -84,9 +83,9 @@ static void init_drawing_area() {
     g_signal_connect(drawing_area, "draw", G_CALLBACK(on_draw_event), &user);
 }
 
-static void init_key_presses() {
-    g_signal_connect(window, "key-press-event", G_CALLBACK(on_key_press_event), NULL);
-    gtk_widget_add_events(window, GDK_KEY_PRESS_MASK);
+static void init_mouse_input() {
+    g_signal_connect(window, "motion-notify-event", G_CALLBACK(on_mouse_move_event), NULL);
+    gtk_widget_add_events(window, GDK_POINTER_MOTION_MASK);
 }
 
 static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
@@ -107,17 +106,10 @@ static gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data
     return FALSE;
 }
 
-static gboolean on_key_press_event(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
-    if (event->keyval == GDK_KEY_Up) {
-        if (user.pos.y > 0) {
-            user.pos.y -= user_speed;  
-        }
-    } else if (event->keyval == GDK_KEY_Down) {
-        if (user.pos.y <= (FIELD_HEIGHT - user.size.height - user_speed)) {
-            user.pos.y += user_speed;
-        }
+static gboolean on_mouse_move_event(GtkWidget *widget, GdkEventMotion *event, gpointer user_data) {
+    if (event->y >= 0 && event->y <= FIELD_HEIGHT - user.size.height) {
+        user.pos.y = (int)event->y;
     }
-    gtk_widget_queue_draw(widget);
     return FALSE;
 }
 
